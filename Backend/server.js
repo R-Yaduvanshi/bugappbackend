@@ -2,9 +2,10 @@ const express = require("express");
 const { signup } = require("./Routes/signup.route");
 const { connection } = require("./config/db");
 const { login } = require("./Routes/login.route");
-
+const cors = require("cors");
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: "*" }));
 require("dotenv").config();
 const PORT = process.env.PORT || 8080;
 
