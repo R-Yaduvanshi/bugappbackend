@@ -7,36 +7,30 @@ const { UserModel } = require("../models/User.models");
 const app = express();
 app.use(express.json());
 
-const login = async (req, res) => {
-  const { email, password } = req.body;
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-  const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
 
-  if (!user) {
-    res.send({ Message: "User not found, Signup please" });
-  } else {
-    const hash_password = user.password;
+    // Compare the password
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
-    const generated_token = jwt.sign(
-      { userID: user._id },
-      process.env.SECRET_KEY
-    );
-
-    bcrypt.compare(password, hash_password, (err, result) => {
-      if (err) {
-        res.send({ Message: "Something went Wrong" });
-        console.log(err);
-      }
-      if (result == true) {
-        res.send({
-          Message: "Login Successfull",
-          token: generated_token,
-        });
-      }
-      if (result === false) {
-        res.send({ Message: "Wrong password" });
-      }
+    if (!passwordMatch) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+    // create a jwt
+    const jwtToken = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+      expiresIn: "1h",
     });
+
+    res.send({ message: "Login Succesfull", jwtToken });
+  } catch (err) {
+    // next(err);
+    console.log(err);
   }
 };
 
